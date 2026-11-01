@@ -2,7 +2,18 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 import fs from "fs";
 import { resolve } from "path";
-import simpleGit from "simple-git";
+// 本倉是 desktop-app/action_code_updater 的 fork，唯一改動就是這一行。
+// 上游 `action.yml` 用 `npm install simple-git`（**沒鎖版本**），simple-git 4.0.0
+// 起拿掉了 default export（實查 registry：latest 4.0.2、`exports` 只給
+// dist/index.mjs；unpkg 的 dist/index.d.ts 只有 `export { simpleGit }`），
+// 於是 2026-11-01 第一次排程就跑成：
+//   SyntaxError: The requested module 'simple-git' does not provide an export named 'default'
+// 具名匯入在 3.x 與 4.x 都存在，所以這樣改對新舊都安全（本檔 4 個呼叫點都是
+// `simpleGit(...)` 函數式用法，不涉及預設匯出）。
+// 順帶查過第二個沒爆的地雷：isbinaryfile 6.0.0 把第二參數從 `size` 改成
+// `options`（`options?.size ?? file.length`），本檔呼叫端傳的是
+// `readFileSync(path)` 配 `lstatSync(path).size`，一般檔兩者等長 → 行為不變。
+import { simpleGit } from "simple-git";
 import { isBinaryFileSync } from "isbinaryfile";
 import process from "process";
 import { execSync, spawnSync } from "child_process";
