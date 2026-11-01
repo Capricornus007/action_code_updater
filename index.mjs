@@ -230,7 +230,14 @@ const processUnusedStyles = async (info) => {
 	let searchDirs;
 	let excludeDirs;
 
-	if (repo === "tdesktop") {
+	// 名稱比對要換成「看目錄結構」：本 fork 的使用者是拿它跑在自己的 tdesktop
+	// 分叉上（Capricornus007/moregram），倉名不再是 "tdesktop"，硬比名字會讓
+	// 整條 unused-styles 直接 throw「unsupported repo」（2026-11-01 run 實測）。
+	// tdesktop 系一定有 Telegram/ 子目錄，用這個判據對任何改名都成立。
+	const isTdesktopLayout = repo === "tdesktop"
+		|| fs.existsSync(resolve(repoPath, "Telegram"));
+
+	if (isTdesktopLayout) {
 		const telegramDir = resolve(repoPath, "Telegram");
 		definitionsDirs = [telegramDir];
 		searchDirs = [telegramDir];
@@ -253,7 +260,7 @@ const processUnusedStyles = async (info) => {
 		excludeDirs = getSubmodulePaths(repoPath);
 	} else {
 		throw `unused-styles: unsupported repo "${repo}" `
-			+ `(expected tdesktop or lib_ui).`;
+			+ `(neither lib_ui nor a tdesktop layout — no ${repoPath}/Telegram).`;
 	}
 
 	const args = [
